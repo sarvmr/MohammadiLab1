@@ -1,69 +1,23 @@
-// Retrieve existing notes from localStorage or initialize an empty array
-let notes = JSON.parse(localStorage.getItem("notes")) || [];
+import Note from "./Note.js";
+
 const notesContainer = document.getElementById("notesContainer");
-const lastSaveTime = document.getElementById("lastSaveTime");
-// Attach event listener to the "Add Note" button
 const addNoteButton = document.getElementById("addNoteButton");
-addNoteButton.addEventListener("click", addNote);
+const lastSaveTime = document.getElementById("lastSaveTime"); // Element for displaying last save time
 
+addNoteButton.addEventListener("click", () => addNote());
 
-// Function to display notes in the container
-function displayNotes() {
-    notesContainer.innerHTML = "";
-    notes.forEach((note, index) => {
-        const noteDiv = document.createElement("div");
-        noteDiv.innerHTML = `
-            <textarea id="noteText_${index}">${note.text}</textarea>
-            <button onclick="updateNote(${index})">Update</button>
-            <button onclick="removeNote(${index})">Remove</button>
-        `;
-        notesContainer.appendChild(noteDiv);
-    });
-}
-
-// Function to add a new note
 function addNote() {
-    const newNote = { text: "", timestamp: "" };
-    notes.push(newNote);
-    
-    const noteDiv = document.createElement("div");
-    noteDiv.innerHTML = `
-        <textarea id="noteText_${notes.length - 1}"></textarea>
-        <button onclick="updateNote(${notes.length - 1})">Update</button>
-        <button onclick="removeNote(${notes.length - 1})">Remove</button>
-    `;
-    notesContainer.appendChild(noteDiv);
-
-    // Push the "Add Note" button down
-    const addButton = document.getElementById("addNoteButton");
-    addButton.style.marginTop = "10px";
-
-    // Save the notes
-    saveNotes();
+    const newNote = new Note("", "", true); // Include "update" and "remove" buttons
+    notesContainer.appendChild(newNote.getNoteElement());
+    updateLastSaveTime(); // Update the last save time when a new note is added
 }
 
-// Function to update a note
-function updateNote(index) {
-    const updatedNoteText = document.getElementById(`noteText_${index}`).value;
-    notes[index].text = updatedNoteText;
-    notes[index].timestamp = new Date().toLocaleString();
-    displayNotes();
-    saveNotes();
-}
-
-// Function to remove a note
-function removeNote(index) {
-    notes.splice(index, 1);
-    displayNotes();
-    saveNotes();
-}
-
-// Function to save notes to local storage and update last save time
-function saveNotes() {
-    localStorage.setItem("notes", JSON.stringify(notes));
-    const currentTime = new Date().toLocaleTimeString();
-    lastSaveTime.textContent = `Last saved: ${currentTime}`;
-}
+// Load notes from localStorage and display them
+const notes = JSON.parse(localStorage.getItem("notes")) || [];
+notes.forEach((noteData) => {
+    const note = new Note(noteData.text, noteData.timestamp);
+    notesContainer.appendChild(note.getNoteElement());
+});
 
 // Add an event listener to the "Back to Index" button
 const backButton = document.getElementById("backButton");
@@ -71,8 +25,17 @@ backButton.addEventListener("click", function () {
     window.location.href = "index.html"; // Redirect to index.html
 });
 
-// Display initial notes
-displayNotes();
+// Function to update and display the last save time
+function updateLastSaveTime() {
+    const currentTime = new Date().toLocaleTimeString();
+    lastSaveTime.textContent = `Last saved: ${currentTime}`;
+}
 
 // Automatically save notes every 2 seconds
-setInterval(saveNotes, 2000);
+setInterval(() => {
+    notes.forEach((note, index) => {
+        note.updateText(); // Update the text content of each note
+        note.saveToLocalStorage(); // Save the notes to local storage
+    });
+    updateLastSaveTime();
+}, 2000);

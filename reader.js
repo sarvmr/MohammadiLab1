@@ -1,23 +1,20 @@
-import Note from './Note.js';
-// Function to retrieve and display notes from localStorage
-function retrieveNotes() {
-    const notes = JSON.parse(localStorage.getItem("notes")) || [];
-    const noteList = document.getElementById("noteList");
+import Note from "./Note.js";
 
-    if (notes.length === 0) {
-        noteList.innerHTML = "<p>No notes found.</p>";
-    } else {
-        noteList.innerHTML = "";
-        notes.forEach((note, index) => {
-            const listItem = document.createElement("li");
-            listItem.innerHTML = `<strong>Note ${index + 1}:</strong> ${note.text} (Created: ${note.timestamp})`;
-            noteList.appendChild(listItem);
-        });
-    }
+const noteList = document.getElementById("noteList");
+const lastRetrieveTime = document.getElementById("lastRetrieveTime");
+
+function retrieveNotes() {
+    // Load notes from localStorage and display them
+    const notes = JSON.parse(localStorage.getItem("notes")) || [];
+    noteList.innerHTML = "";
+
+    notes.forEach((noteData, index) => {
+        const note = new Note(noteData.text, noteData.timestamp, false); // Exclude "update" and "remove" buttons
+        noteList.appendChild(note.getNoteElement());
+    });
 
     // Update the "Last retrieved" time
     const currentTime = new Date().toLocaleTimeString();
-    const lastRetrieveTime = document.getElementById("lastRetrieveTime");
     lastRetrieveTime.textContent = `Last retrieved: ${currentTime}`;
 }
 
@@ -26,7 +23,6 @@ const backButton = document.getElementById("backButton");
 backButton.addEventListener("click", function () {
     window.location.href = "index.html"; // Redirect to index.html
 });
-
 
 // Retrieve and display notes initially
 retrieveNotes();

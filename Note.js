@@ -1,55 +1,75 @@
 // Note.js
-
 class Note {
-    constructor(text) {
+    constructor(text, timestamp, showButtons = true) {
         this.text = text;
-        this.timestamp = new Date().toLocaleString();
-        this.createNoteElement();
+        this.timestamp = timestamp;
+        this.createNoteElement(showButtons);
+        if (showButtons) {
+            this.addEventListeners();
+        }
     }
 
-    createNoteElement() {
-        const noteDiv = document.createElement("div");
-        noteDiv.innerHTML = `
-            <textarea>${this.text}</textarea>
-            <button onclick="this.updateNote()">Update</button>
-            <button onclick="this.removeNote()">Remove</button>
-        `;
-        document.getElementById("notesContainer").appendChild(noteDiv);
-    }
+    createNoteElement(showButtons) {
+        this.noteDiv = document.createElement("div");
+        let buttonsHtml = "";
 
-    updateNote() {
-        const textArea = this.getNoteTextArea();
-        const updatedText = textArea.value;
-        this.text = updatedText;
-        this.timestamp = new Date().toLocaleString();
-        textArea.value = updatedText;
-
-        // Save the notes after updating
-        this.saveNote();
-    }
-
-    removeNote() {
-        const notesContainer = document.getElementById("notesContainer");
-        notesContainer.removeChild(this.noteDiv); // Remove the note element itself
-
-        // Remove the note from the notes array
-        const index = notes.findIndex((note) => note === this);
-        if (index !== -1) {
-            notes.splice(index, 1);
+        if (showButtons) {
+            buttonsHtml = `
+                <button class="updateButton">Update</button>
+                <button class="removeButton">Remove</button>
+            `;
         }
 
-        // Save the notes after removal
-        this.saveNote();
+        this.noteDiv.innerHTML = `
+            <textarea${showButtons ? "" : " readonly"}>${this.text}</textarea>
+            ${buttonsHtml}
+        `;
     }
 
-    saveNote() {
-        // Update the notes array in local storage
-        localStorage.setItem("notes", JSON.stringify(notes));
+    addEventListeners() {
+        const updateButton = this.noteDiv.querySelector(".updateButton");
+        const removeButton = this.noteDiv.querySelector(".removeButton");
 
-        // Update the "Last saved" time
-        const lastSaveTime = document.getElementById("lastSaveTime");
-        const currentTime = new Date().toLocaleTimeString();
-        lastSaveTime.textContent = `Last saved: ${currentTime}`;
+        updateButton.addEventListener("click", () => this.update());
+        removeButton.addEventListener("click", () => this.remove());
+    }
+
+    update() {
+        this.text = this.noteDiv.querySelector("textarea").value;
+        this.timestamp = new Date().toLocaleString();
+        this.saveToLocalStorage();
+    }
+
+    remove() {
+        this.noteDiv.remove();
+        this.removeFromLocalStorage();
+    }
+
+    saveToLocalStorage() {
+        const notes = JSON.parse(localStorage.getItem("notes")) || [];
+        const index = notes.findIndex((note) => note.timestamp === this.timestamp);
+
+        if (index !== -1) {
+            notes[index] = this;
+        } else {
+            notes.push(this);
+        }
+
+        localStorage.setItem("notes", JSON.stringify(notes));
+    }
+
+    removeFromLocalStorage() {
+        const notes = JSON.parse(localStorage.getItem("notes")) || [];
+        const updatedNotes = notes.filter((note) => note.timestamp !== this.timestamp);
+        localStorage.setItem("notes", JSON.stringify(updatedNotes));
+    }
+
+    getNoteElement() {
+        return this.noteDiv;
+    }
+
+    updateText() {
+        this.noteDiv.querySelector("textarea").value = this.text;
     }
 }
 
